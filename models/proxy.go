@@ -1,6 +1,10 @@
 package models
 
-import "go.uber.org/zap"
+import (
+	"fmt"
+	"go.uber.org/zap"
+	"strings"
+)
 
 type Proxy struct {
 	Id        uint `gorm:"primaryKey"`
@@ -12,14 +16,18 @@ type Proxy struct {
 	IsWorking bool
 }
 
+func (p *Proxy) Url() string {
+	return fmt.Sprintf("http://%s:%s", p.Ip, p.Port)
+}
+
 func convertHttpsToBool(httpsValue string) bool {
-	switch httpsValue {
+	switch strings.ToLower(httpsValue) {
 	case "yes":
 		return true
 	case "no":
 		return false
 	default:
-		zap.L().Error("Failed to convert: " + httpsValue + " to bool")
+		zap.L().Error("Failed to convert: " + strings.ToLower(httpsValue) + " to bool")
 		return false
 	}
 }

@@ -15,7 +15,7 @@ func Connect() *gorm.DB {
 	if err != nil {
 		zap.L().Fatal("failed to connect database")
 	}
-	err = db.AutoMigrate(&models.Proxy{})
+	err = db.AutoMigrate(&models.Proxy{}, &models.Site{})
 	if err != nil {
 		zap.L().Fatal("failed to auto migrate database")
 	}
