@@ -35,7 +35,8 @@ func (p *Parser) ParseProxies() {
 		for i, proxyValue := range proxyRowElements {
 			proxyValuesText[i] = proxyValue.Text()
 		}
-		p.DB.FirstOrCreate(&models.Proxy{}, models.NewProxyFromArray(proxyValuesText))
+		proxy := models.NewProxyFromArray(proxyValuesText)
+		p.DB.Where("ip = ? and port = ?", proxy.Ip, proxy.Port).FirstOrCreate(&proxy)
 	}
 }
 
@@ -46,6 +47,11 @@ func (p *Parser) CheckProxy(proxy models.Proxy, checkingSites []models.Site) boo
 	for _, site := range checkingSites {
 		go func(site models.Site, cBool chan bool) {
 			r, err := client.Get(site.Url)
+			if err != nil {
+				zap.L().Error(err.Error())
+			} else {
+				zap.L().Info("Success")
+			}
 			cBool <- err == nil && r.StatusCode == 200
 		}(site, cBool)
 	}
@@ -60,22 +66,36 @@ func (p *Parser) CheckProxy(proxy models.Proxy, checkingSites []models.Site) boo
 
 func (p *Parser) UpdateProxiesWorking() {
 	var proxies []models.Proxy
-	p.DB.Find(&proxies)
+	p.DB.Order("last_working DESC").Find(&proxies)
 	var wg sync.WaitGroup
 	var checkingSites []models.Site
 	p.DB.Find(&checkingSites)
+	counter := 0
 	for _, proxy := range proxies {
+		counter++
 		go func(proxy models.Proxy) {
 			wg.Add(1)
 			IsWorkingNow := p.CheckProxy(proxy, checkingSites)
 			if proxy.IsWorking != IsWorkingNow {
-				proxy.IsWorking = IsWorkingNow
+				proxy.ToggleWorking()
 				p.DB.Save(&proxy)
+				zap.L().Info("Updated work of: " + proxy.Url() + " to: " + strconv.FormatBool(proxy.IsWorking))
+			} else {
+				zap.L().Info(proxy.Url() + " work value still: " + strconv.FormatBool(proxy.IsWorking))
 			}
-			zap.L().Info("Updated work of: " + proxy.Url() + " to: " + strconv.FormatBool(proxy.IsWorking))
 			defer wg.Done()
 		}(proxy)
-		time.Sleep(200 * time.Millisecond)
+		if counter == 8 {
+			wg.Wait()
+			counter = 0
+		}
 	}
-	wg.Wait()
+}
+
+func (p *Parser) RemoveEssencesProxies() {
+	var proxies []models.Proxy
+	p.DB.Where("last_working <= ? and is_working = false", time.Now().Add(-3*time.Hour)).Find(&proxies)
+	for _, proxy := range proxies {
+		proxy.Delete(p.DB)
+	}
 }

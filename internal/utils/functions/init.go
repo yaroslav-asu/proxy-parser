@@ -6,6 +6,6 @@ import (
 )
 
 func Init() {
-	logger.InitLogger()
 	vars.InitEnv()
+	logger.InitLogger()
 }
