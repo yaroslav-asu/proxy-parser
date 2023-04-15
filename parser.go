@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/anaskhan96/soup"
+	"github.com/tcnksm/go-httpstat"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"
@@ -40,19 +41,30 @@ func (p *Parser) ParseProxies() {
 	}
 }
 
-func (p *Parser) CheckProxy(proxy models.Proxy, checkingSites []models.Site) bool {
+func (p *Parser) CheckProxy(proxy *models.Proxy, checkingSites []models.Site) bool {
 	parsedProxy, _ := url.Parse(proxy.Url())
-	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(parsedProxy)}, Timeout: 20 * time.Second}
+	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(parsedProxy)}, Timeout: 10 * time.Second}
 	cBool := make(chan bool, len(checkingSites))
 	for _, site := range checkingSites {
 		go func(site models.Site, cBool chan bool) {
-			r, err := client.Get(site.Url)
+			req, err := http.NewRequest("GET", site.Url, nil)
+			if err != nil {
+				zap.L().Error("Failed to create request")
+			}
+			var result httpstat.Result
+			ctx := httpstat.WithHTTPStat(req.Context(), &result)
+			req = req.WithContext(ctx)
+			res, err := client.Do(req)
+
 			if err != nil {
 				zap.L().Error(err.Error())
 			} else {
+				defer res.Body.Close()
+				result.End(time.Now())
+				proxy.RequestTime = result.StartTransfer
 				zap.L().Info("Success")
 			}
-			cBool <- err == nil && r.StatusCode == 200
+			cBool <- err == nil && res.StatusCode == 200
 		}(site, cBool)
 	}
 	for range checkingSites {
@@ -75,7 +87,7 @@ func (p *Parser) UpdateProxiesWorking() {
 		counter++
 		go func(proxy models.Proxy) {
 			wg.Add(1)
-			IsWorkingNow := p.CheckProxy(proxy, checkingSites)
+			IsWorkingNow := p.CheckProxy(&proxy, checkingSites)
 			if proxy.IsWorking != IsWorkingNow {
 				proxy.ToggleWorking()
 				p.DB.Save(&proxy)
@@ -94,7 +106,7 @@ func (p *Parser) UpdateProxiesWorking() {
 
 func (p *Parser) RemoveEssencesProxies() {
 	var proxies []models.Proxy
-	p.DB.Where("last_working <= ? and is_working = false", time.Now().Add(-3*time.Hour)).Find(&proxies)
+	p.DB.Where("last_working <= ? and is_working = false", time.Now().Add(-1*time.Hour)).Find(&proxies)
 	for _, proxy := range proxies {
 		proxy.Delete(p.DB)
 	}

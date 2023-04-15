@@ -16,6 +16,7 @@ type Proxy struct {
 	Country     string
 	Https       bool
 	IsWorking   bool
+	RequestTime time.Duration
 	LastWorking time.Time
 }
 
@@ -43,6 +44,7 @@ func NewProxyFromArray(proxyValues []string) *Proxy {
 		Country:     proxyValues[3],
 		Https:       convertHttpsToBool(proxyValues[6]),
 		IsWorking:   false,
+		RequestTime: -1,
 		LastWorking: time.Now(),
 	}
 }
