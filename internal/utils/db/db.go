@@ -21,3 +21,16 @@ func Connect() *gorm.DB {
 	}
 	return db
 }
+
+func Close(db *gorm.DB) {
+	postgresDB, err := db.DB()
+	if err != nil {
+		zap.L().Error("Failed to get db instance: " + err.Error())
+		zap.L().Info("DB connection wasn't close")
+		return
+	}
+	err = postgresDB.Close()
+	if err != nil {
+		zap.L().Info("DB connection wasn't close: " + err.Error())
+	}
+}
