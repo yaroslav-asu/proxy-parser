@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/yaroslav-asu/proxy-parser/internal/utils/functions"
 	"go.uber.org/zap"
-	"proxy-parser/internal/utils/functions"
 	"time"
 )
 
@@ -21,6 +21,6 @@ func main() {
 		} else {
 			zap.L().Info("Don't need to update proxies")
 		}
-		time.Sleep(5 * time.Minute)
+		time.Sleep(1 * time.Minute)
 	}
 }

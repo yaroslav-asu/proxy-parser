@@ -1,8 +1,8 @@
 package functions
 
 import (
-	"proxy-parser/internal/utils/logger"
-	"proxy-parser/internal/utils/vars"
+	"github.com/yaroslav-asu/proxy-parser/internal/utils/logger"
+	"github.com/yaroslav-asu/proxy-parser/internal/utils/vars"
 )
 
 func Init() {

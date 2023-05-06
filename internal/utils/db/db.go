@@ -2,11 +2,11 @@ package db
 
 import (
 	"fmt"
+	"github.com/yaroslav-asu/proxy-parser/internal/utils/vars"
+	"github.com/yaroslav-asu/proxy-parser/models"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"proxy-parser/internal/utils/vars"
-	"proxy-parser/models"
 )
 
 func Connect() *gorm.DB {

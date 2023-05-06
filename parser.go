@@ -3,12 +3,12 @@ package main
 import (
 	"github.com/anaskhan96/soup"
 	"github.com/tcnksm/go-httpstat"
+	"github.com/yaroslav-asu/proxy-parser/internal/utils/db"
+	"github.com/yaroslav-asu/proxy-parser/models"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"
 	"net/url"
-	"proxy-parser/internal/utils/db"
-	"proxy-parser/models"
 	"strconv"
 	"sync"
 	"time"
@@ -28,7 +28,7 @@ func NewParser() Parser {
 
 func (p *Parser) WorkingProxiesCount() int64 {
 	var workingProxiesCount int64
-	p.DB.Where("is_working = true").Count(&workingProxiesCount)
+	p.DB.Model(models.Proxy{}).Where("is_working = true").Count(&workingProxiesCount)
 	return workingProxiesCount
 }
 

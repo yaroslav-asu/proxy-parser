@@ -1,9 +1,9 @@
 package logger
 
 import (
+	"github.com/yaroslav-asu/proxy-parser/internal/utils/vars"
 	"go.uber.org/zap"
 	"log"
-	"proxy-parser/internal/utils/vars"
 )
 
 func InitLogger() {

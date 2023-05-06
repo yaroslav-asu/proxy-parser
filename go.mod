@@ -1,4 +1,4 @@
-module proxy-parser
+module github.com/yaroslav-asu/proxy-parser
 
 go 1.20
 

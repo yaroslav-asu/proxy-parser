@@ -17,7 +17,7 @@ func initDefaultEnv() {
 	zap.L().Info("Started to initialize environmental vars")
 	err := godotenv.Load(".env")
 	if err != nil {
-		zap.L().Warn("Failed to load .env file")
+		zap.L().Fatal("Failed to load .env file")
 	}
 	RunningMode = os.Getenv("RUNNING_MODE")
 	zap.L().Info("Environmental vars successfully initialized")
@@ -28,7 +28,7 @@ func initDbEnv() {
 	zap.L().Info("Started to initialize environmental vars for db")
 	err := godotenv.Load(".env.db")
 	if err != nil {
-		zap.L().Warn("Failed to load .env.db file")
+		zap.L().Fatal("Failed to load .env.db file")
 	}
 	DbUser = os.Getenv("POSTGRES_USER")
 	DbPassword = os.Getenv("POSTGRES_PASSWORD")
