@@ -49,10 +49,6 @@ func NewProxyFromArray(proxyValues []string) *Proxy {
 	}
 }
 
-func NewProxy(ip, port, code, country, https string) *Proxy {
-	return NewProxyFromArray([]string{ip, port, code, country, "", "", https, ""})
-}
-
 func (p *Proxy) Delete(db *gorm.DB) {
 	db.Delete(&p)
 }
