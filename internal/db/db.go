@@ -2,8 +2,8 @@ package db
 
 import (
 	"fmt"
-	models2 "github.com/yaroslav-asu/proxy-parser/internal/models"
 	"github.com/yaroslav-asu/proxy-parser/internal/utils/vars"
+	"github.com/yaroslav-asu/proxy-parser/models"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -15,7 +15,7 @@ func Connect() *gorm.DB {
 	if err != nil {
 		zap.L().Fatal("failed to connect database")
 	}
-	err = db.AutoMigrate(&models2.Proxy{}, &models2.Site{})
+	err = db.AutoMigrate(&models.Proxy{}, &models.Site{})
 	if err != nil {
 		zap.L().Fatal("failed to auto migrate database")
 	}

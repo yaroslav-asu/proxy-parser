@@ -4,7 +4,7 @@ import (
 	"github.com/anaskhan96/soup"
 	"github.com/tcnksm/go-httpstat"
 	"github.com/yaroslav-asu/proxy-parser/internal/db"
-	models2 "github.com/yaroslav-asu/proxy-parser/internal/models"
+	"github.com/yaroslav-asu/proxy-parser/models"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"
@@ -28,7 +28,7 @@ func NewParser() Parser {
 
 func (p *Parser) WorkingProxiesCount() int64 {
 	var workingProxiesCount int64
-	p.DB.Model(models2.Proxy{}).Where("is_working = true").Count(&workingProxiesCount)
+	p.DB.Model(models.Proxy{}).Where("is_working = true").Count(&workingProxiesCount)
 	return workingProxiesCount
 }
 
@@ -46,18 +46,18 @@ func (p *Parser) ParseProxies() {
 		for i, proxyValue := range proxyRowElements {
 			proxyValuesText[i] = proxyValue.Text()
 		}
-		proxy := models2.NewProxyFromArray(proxyValuesText)
+		proxy := models.NewProxyFromArray(proxyValuesText)
 		p.DB.Where("ip = ? and port = ?", proxy.Ip, proxy.Port).FirstOrCreate(&proxy)
 	}
 }
 
-func (p *Parser) CheckProxy(proxy *models2.Proxy, checkingSites []models2.Site) bool {
+func (p *Parser) CheckProxy(proxy *models.Proxy, checkingSites []models.Site) bool {
 	zap.L().Info("Checking is proxy works")
 	parsedProxy, _ := url.Parse(proxy.Url())
 	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(parsedProxy)}, Timeout: requestTimeout}
 	cBool := make(chan bool, len(checkingSites))
 	for _, site := range checkingSites {
-		go func(site models2.Site, cBool chan bool) {
+		go func(site models.Site, cBool chan bool) {
 			req, err := http.NewRequest("GET", site.Url, nil)
 			if err != nil {
 				zap.L().Error("Failed to create request")
@@ -89,15 +89,15 @@ func (p *Parser) CheckProxy(proxy *models2.Proxy, checkingSites []models2.Site) 
 
 func (p *Parser) UpdateProxiesWorking() {
 	zap.L().Info("Updating proxies")
-	var proxies []models2.Proxy
+	var proxies []models.Proxy
 	p.DB.Order("last_working DESC").Find(&proxies)
 	var wg sync.WaitGroup
-	var checkingSites []models2.Site
+	var checkingSites []models.Site
 	p.DB.Find(&checkingSites)
 	counter := 0
 	for _, proxy := range proxies {
 		counter++
-		go func(proxy models2.Proxy) {
+		go func(proxy models.Proxy) {
 			wg.Add(1)
 			IsWorkingNow := p.CheckProxy(&proxy, checkingSites)
 			if proxy.IsWorking != IsWorkingNow {
@@ -118,7 +118,7 @@ func (p *Parser) UpdateProxiesWorking() {
 
 func (p *Parser) RemoveEssencesProxies() {
 	zap.L().Info("Starting to remove essences proxies")
-	var proxies []models2.Proxy
+	var proxies []models.Proxy
 	p.DB.Where("last_working <= ? and is_working = false", time.Now().Add(-1*time.Hour)).Find(&proxies)
 	for _, proxy := range proxies {
 		proxy.Delete(p.DB)
